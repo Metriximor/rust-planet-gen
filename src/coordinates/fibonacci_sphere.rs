@@ -1,3 +1,4 @@
+//! Creates a evenly-ish distanced set of points in a spherical shape
 use std::f64::consts::PI;
 
 use super::{cartesian_coord::CartesianCoord, spherical_coord::SphericalCoord};
@@ -16,25 +17,45 @@ impl FibonacciSphere {
             seed: seed,
             jitter: jitter,
             number_points: number_points,
-            points: Vec::with_capacity(usize::from(number_points)),
+            points: FibonacciSphere::generate_points(number_points),
         }
+    }
+
+    /// Get a reference to the fibonacci sphere's points.
+    pub fn points(&self) -> &[SphericalCoord] {
+        self.points.as_ref()
     }
 
     /// Generates the fibonnaci sphere points
     /// Using [golden selection](http://web.archive.org/web/20120421191837/http://www.cgafaq.info/wiki/Evenly_distributed_points_on_sphere)
-    fn generate_points(&mut self) -> &Vec<SphericalCoord> {
+    ///
+    /// # Todo
+    ///
+    /// * Implement Jitter based on seed
+    fn generate_points(number_points: u16) -> Vec<SphericalCoord> {
+        let mut points = Vec::with_capacity(usize::from(number_points));
         let dlong = PI * (3_f64 - 5_f64.sqrt());
-        let dz = 2.0 / f64::from(self.number_points);
+        let dz = 2.0 / f64::from(number_points);
         let mut long: f64 = 0.0;
         let mut z = 1.0 - dz / 2.0;
-        for _k in 0..self.number_points - 1 {
+        for _k in 0..number_points - 1 {
             let r = (1.0 - z * z).sqrt();
             let cart = CartesianCoord::new(long.cos() * r, long.sin() * r, z);
-            let sphere = cart.to_spherical();
             z -= dz;
             long += dlong;
-            self.points.push(sphere);
+            points.push(cart.into());
         }
-        &self.points
+        points
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FibonacciSphere;
+
+    #[test]
+    fn test_create_sphere() {
+        let sphere = FibonacciSphere::new(100, 0.0, 123);
+        println!("{:?}", sphere.points());
     }
 }
